@@ -9,36 +9,33 @@ using System.Diagnostics;
 using Telerik.Blazor.Components;
 using Telerik.DataSource.Extensions;
 using Telerik.SvgIcons;
+using static Duende.IdentityServer.Models.IdentityResources;
 
-namespace OCTOBER.Server.Controllers.UD
+// For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+
+namespace OCTOBER.Server
 {
-    [Route("api/[controller]")]
-    [ApiController]
-
-    public class SchoolController : BaseController, GenericRestController<SchoolDTO>
+    public class StudentController : BaseController, GenericRestController<StudentDTO>
     {
-        public SchoolController(OCTOBEROracleContext context,
-                                IHttpContextAccessor httpContextAccessor,
-                                IMemoryCache memoryCache)
-                : base(context, httpContextAccessor)
+        public StudentController(OCTOBEROracleContext context, IHttpContextAccessor httpContextAccessor) : base(context, httpContextAccessor)
         {
         }
 
         [HttpDelete]
-        [Route("Delete/{SchoolID}")]
+        [Route("Delete/{StudentId}")]
 
-        public async Task<IActionResult> Delete(int SchoolID)
+        public async Task<IActionResult> Delete(int StudentId)
         {
             Debugger.Launch();
             try
             {
                 await _context.Database.BeginTransactionAsync();
 
-                var itm = await _context.Schools.Where(x => x.SchoolId == SchoolID).FirstOrDefaultAsync();
+                var itm = await _context.Students.Where(x => x.SchoolId == StudentId).FirstOrDefaultAsync();
 
                 if (itm != null)
                 {
-                    _context.Schools.Remove(itm);
+                    _context.Students.Remove(itm);
                 }
                 await _context.SaveChangesAsync();
                 await _context.Database.CommitTransactionAsync();
@@ -53,7 +50,6 @@ namespace OCTOBER.Server.Controllers.UD
             }
         }
 
-
         [HttpGet]
         [Route("Get")]
         public async Task<IActionResult> Get()
@@ -63,14 +59,21 @@ namespace OCTOBER.Server.Controllers.UD
             {
                 await _context.Database.BeginTransactionAsync();
 
-                var result = await _context.Schools.Select(sp => new SchoolDTO
+                var result = await _context.Students.Select(sp => new StudentDTO
                 {
+                    StudentId = sp.StudentId,
+                    Salutation = sp.Salutation,
+                    FirstName = sp.FirstName,
+                    LastName = sp.LastName,
+                    StreetAddress = sp.StreetAddress,
+                    Zip = sp.Zip,
+                    Phone = sp.Phone,
+                    Employer = sp.Employer,
+                    RegistrationDate = sp.RegistrationDate,
                     CreatedBy = sp.CreatedBy,
                     CreatedDate = sp.CreatedDate,
                     ModifiedBy = sp.ModifiedBy,
                     ModifiedDate = sp.ModifiedDate,
-                    SchoolId = sp.SchoolId,
-                    SchoolName = sp.SchoolName
                 })
                 .ToListAsync();
                 await _context.Database.RollbackTransactionAsync();
@@ -85,23 +88,30 @@ namespace OCTOBER.Server.Controllers.UD
         }
 
         [HttpGet]
-        [Route("Get/{SchoolID}")]
-        public async Task<IActionResult> Get(int SchoolID)
+        [Route("Get/{StudentId}")]
+        public async Task<IActionResult> Get(int StudentId)
         {
             try
             {
                 await _context.Database.BeginTransactionAsync();
 
-                SchoolDTO? result = await _context.Schools
-                    .Where(x => x.SchoolId == SchoolID)
-                    .Select(sp => new SchoolDTO
+                StudentDTO? result = await _context.Students
+                    .Where(x => x.StudentId == StudentId)
+                    .Select(sp => new StudentDTO
                     {
+                        StudentId = sp.StudentId,
+                        Salutation = sp.Salutation,
+                        FirstName = sp.FirstName,
+                        LastName = sp.LastName,
+                        StreetAddress = sp.StreetAddress,
+                        Zip = sp.Zip,
+                        Phone = sp.Phone,
+                        Employer = sp.Employer,
+                        RegistrationDate = sp.RegistrationDate,
                         CreatedBy = sp.CreatedBy,
                         CreatedDate = sp.CreatedDate,
                         ModifiedBy = sp.ModifiedBy,
                         ModifiedDate = sp.ModifiedDate,
-                        SchoolId = sp.SchoolId,
-                        SchoolName = sp.SchoolName
                     })
                 .SingleAsync();
                 await _context.Database.RollbackTransactionAsync();
@@ -115,51 +125,38 @@ namespace OCTOBER.Server.Controllers.UD
             }
         }
 
-        [HttpPost]
-        [Route("Post")]
-        public async Task<IActionResult> Post([FromBody] SchoolDTO _SchoolDTO)
+        // GET: /<controller>/
+        public IActionResult Index()
         {
-            try
-            {
-                await _context.Database.BeginTransactionAsync();
+            return View();
+        }
 
-                var itm = await _context.Schools.Where(x => x.SchoolId == _SchoolDTO.SchoolId).FirstOrDefaultAsync();
-
-                if (itm == null)
-                {
-                    School s = new School
-                    {
-                        SchoolId = _SchoolDTO.SchoolId,
-                        SchoolName = _SchoolDTO.SchoolName
-                    };
-                    _context.Schools.Add(s);
-                    await _context.SaveChangesAsync();
-                    await _context.Database.CommitTransactionAsync();
-                }
-                return Ok();
-            }
-            catch (Exception Dex)
-            {
-                await _context.Database.RollbackTransactionAsync();
-                //List<OraError> DBErrors = ErrorHandling.TryDecodeDbUpdateException(Dex, _OraTranslateMsgs);
-                return StatusCode(StatusCodes.Status417ExpectationFailed, "An Error has occurred");
-            }
+        public Task<IActionResult> Post([FromBody] StudentDTO _T)
+        {
+            throw new NotImplementedException();
         }
 
         [HttpPut]
         [Route("Put")]
-        public async Task<IActionResult> Put([FromBody] SchoolDTO _SchoolDTO)
+        public async Task<IActionResult> Put([FromBody] StudentDTO _StudentDTO)
         {
 
             try
             {
                 await _context.Database.BeginTransactionAsync();
 
-                var itm = await _context.Schools.Where(x => x.SchoolId == _SchoolDTO.SchoolId).FirstOrDefaultAsync();
-            
-                itm.SchoolName = _SchoolDTO.SchoolName;
+                var itm = await _context.Students.Where(x => x.StudentId == _StudentDTO.StudentId).FirstOrDefaultAsync();
 
-                _context.Schools.Update(itm);
+                itm.Salutation = _StudentDTO.Salutation;
+                itm.FirstName = _StudentDTO.FirstName;
+                itm.LastName = _StudentDTO.LastName;
+                itm.StreetAddress = _StudentDTO.StreetAddress;
+                itm.Zip = _StudentDTO.Zip;
+                itm.Phone = _StudentDTO.Phone;
+                itm.Employer = _StudentDTO.Employer;
+                itm.RegistrationDate = _StudentDTO.RegistrationDate;
+
+                _context.Students.Update(itm);
                 await _context.SaveChangesAsync();
                 await _context.Database.CommitTransactionAsync();
 
@@ -174,3 +171,4 @@ namespace OCTOBER.Server.Controllers.UD
         }
     }
 }
+

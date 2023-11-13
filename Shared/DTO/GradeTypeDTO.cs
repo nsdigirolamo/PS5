@@ -1,24 +1,23 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace OCTOBER.Shared.DTO
 {
-    public  class CourseDTO
-    {
+	public class GradeTypeDTO
+	{
         [Precision(8)]
-        public int CourseNo { get; set; }
+        public int SchoolId { get; set; }
+        [StringLength(2)]
+        [Unicode(false)]
+        public string GradeTypeCode { get; set; } = null!;
         [StringLength(50)]
+        [Unicode(false)]
         public string Description { get; set; } = null!;
-        public decimal? Cost { get; set; }
-        [Precision(8)]
-        public int? Prerequisite { get; set; }
         [StringLength(30)]
+        [Unicode(false)]
         public string CreatedBy { get; set; } = null!;
         public DateTime CreatedDate { get; set; }
         [StringLength(30)]
@@ -27,3 +26,4 @@ namespace OCTOBER.Shared.DTO
         public DateTime ModifiedDate { get; set; }
     }
 }
+
