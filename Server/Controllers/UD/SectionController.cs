@@ -10,6 +10,7 @@ using Telerik.Blazor.Components;
 using Telerik.DataSource.Extensions;
 using Telerik.SvgIcons;
 using static System.Collections.Specialized.BitVector32;
+using Section = OCTOBER.EF.Models.Section;
 
 // For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -99,6 +100,7 @@ namespace OCTOBER.Server.Controllers.UD
                     .Select(sp => new SectionDTO
                     {
                         SectionId = sp.SectionId,
+                        SchoolId = sp.SchoolId,
                         CourseNo = sp.CourseNo,
                         SectionNo = sp.SectionNo,
                         StartDateTime = sp.StartDateTime,
@@ -109,7 +111,6 @@ namespace OCTOBER.Server.Controllers.UD
                         CreatedDate = sp.CreatedDate,
                         ModifiedBy = sp.ModifiedBy,
                         ModifiedDate = sp.ModifiedDate,
-                        SchoolId = sp.SchoolId
                     })
                 .SingleAsync();
                 await _context.Database.RollbackTransactionAsync();
@@ -123,9 +124,44 @@ namespace OCTOBER.Server.Controllers.UD
             }
         }
 
-        public Task<IActionResult> Post([FromBody] SectionDTO _T)
+        [HttpPost]
+        [Route("Post")]
+        public async Task<IActionResult> Post([FromBody] SectionDTO _SectionDTO)
         {
-            throw new NotImplementedException();
+            try
+            {
+                await _context.Database.BeginTransactionAsync();
+
+                var itm = await _context.Sections.Where(
+                    x => x.SectionId == _SectionDTO.SectionId &&
+                    x.SchoolId == _SectionDTO.SchoolId
+                ).FirstOrDefaultAsync();
+
+                if (itm == null)
+                {
+                    Section x = new Section
+                    {
+                        SectionId = _SectionDTO.SectionId,
+                        SchoolId = _SectionDTO.SchoolId,
+                        CourseNo = _SectionDTO.CourseNo,
+                        SectionNo = _SectionDTO.SectionNo,
+                        StartDateTime = _SectionDTO.StartDateTime,
+                        Location = _SectionDTO.Location,
+                        InstructorId = _SectionDTO.InstructorId,
+                        Capacity = _SectionDTO.Capacity,
+                    };
+                    _context.Sections.Add(x);
+                    await _context.SaveChangesAsync();
+                    await _context.Database.CommitTransactionAsync();
+                }
+                return Ok();
+            }
+            catch (Exception Dex)
+            {
+                await _context.Database.RollbackTransactionAsync();
+                //List<OraError> DBErrors = ErrorHandling.TryDecodeDbUpdateException(Dex, _OraTranslateMsgs);
+                return StatusCode(StatusCodes.Status417ExpectationFailed, "An Error has occurred");
+            }
         }
 
         [HttpPut]
@@ -137,7 +173,10 @@ namespace OCTOBER.Server.Controllers.UD
             {
                 await _context.Database.BeginTransactionAsync();
 
-                var itm = await _context.Sections.Where(x => x.SectionId == _SectionDTO.SectionId && x.SchoolId == _SectionDTO.SchoolId).FirstOrDefaultAsync();
+                var itm = await _context.Sections.Where(
+                    x => x.SectionId == _SectionDTO.SectionId &&
+                    x.SchoolId == _SectionDTO.SchoolId
+                ).FirstOrDefaultAsync();
 
                 itm.SectionNo = _SectionDTO.SectionNo;
                 itm.CourseNo = _SectionDTO.CourseNo;

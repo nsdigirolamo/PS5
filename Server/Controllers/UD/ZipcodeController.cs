@@ -118,10 +118,40 @@ namespace OCTOBER.Server.Controllers.UD
             return View();
         }
 
-        public Task<IActionResult> Post([FromBody] ZipcodeDTO _T)
+        [HttpPost]
+        [Route("Post")]
+        public async Task<IActionResult> Post([FromBody] ZipcodeDTO _ZipcodeDTO)
         {
-            throw new NotImplementedException();
+            try
+            {
+                await _context.Database.BeginTransactionAsync();
+
+                var itm = await _context.Zipcodes.Where(
+                    x => x.Zip == _ZipcodeDTO.Zip
+                ).FirstOrDefaultAsync();
+
+                if (itm == null)
+                {
+                    Zipcode x = new Zipcode
+                    {
+                        Zip = _ZipcodeDTO.Zip,
+                        City = _ZipcodeDTO.City,
+                        State = _ZipcodeDTO.State,
+                    };
+                    _context.Zipcodes.Add(x);
+                    await _context.SaveChangesAsync();
+                    await _context.Database.CommitTransactionAsync();
+                }
+                return Ok();
+            }
+            catch (Exception Dex)
+            {
+                await _context.Database.RollbackTransactionAsync();
+                //List<OraError> DBErrors = ErrorHandling.TryDecodeDbUpdateException(Dex, _OraTranslateMsgs);
+                return StatusCode(StatusCodes.Status417ExpectationFailed, "An Error has occurred");
+            }
         }
+
         [HttpPut]
         [Route("Put")]
         public async Task<IActionResult> Put([FromBody] ZipcodeDTO _ZipcodeDTO)
@@ -131,7 +161,9 @@ namespace OCTOBER.Server.Controllers.UD
             {
                 await _context.Database.BeginTransactionAsync();
 
-                var itm = await _context.Zipcodes.Where(x => x.Zip == _ZipcodeDTO.Zip).FirstOrDefaultAsync();
+                var itm = await _context.Zipcodes.Where(
+                    x => x.Zip == _ZipcodeDTO.Zip
+                ).FirstOrDefaultAsync();
 
                 itm.City = _ZipcodeDTO.City;
                 itm.State = _ZipcodeDTO.State;

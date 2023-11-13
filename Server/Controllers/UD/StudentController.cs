@@ -131,9 +131,44 @@ namespace OCTOBER.Server
             return View();
         }
 
-        public Task<IActionResult> Post([FromBody] StudentDTO _T)
+        [HttpPost]
+        [Route("Post")]
+        public async Task<IActionResult> Post([FromBody] StudentDTO _StudentDTO)
         {
-            throw new NotImplementedException();
+            try
+            {
+                await _context.Database.BeginTransactionAsync();
+
+                var itm = await _context.Students.Where(
+                    x => x.StudentId == _StudentDTO.StudentId
+                ).FirstOrDefaultAsync();
+
+                if (itm == null)
+                {
+                    Student x = new Student
+                    {
+                        StudentId = _StudentDTO.StudentId,
+                        Salutation = _StudentDTO.Salutation,
+                        FirstName = _StudentDTO.FirstName,
+                        LastName = _StudentDTO.LastName,
+                        StreetAddress = _StudentDTO.StreetAddress,
+                        Zip = _StudentDTO.Zip,
+                        Phone = _StudentDTO.Phone,
+                        Employer = _StudentDTO.Employer,
+                        RegistrationDate = _StudentDTO.RegistrationDate,
+                    };
+                    _context.Students.Add(x);
+                    await _context.SaveChangesAsync();
+                    await _context.Database.CommitTransactionAsync();
+                }
+                return Ok();
+            }
+            catch (Exception Dex)
+            {
+                await _context.Database.RollbackTransactionAsync();
+                //List<OraError> DBErrors = ErrorHandling.TryDecodeDbUpdateException(Dex, _OraTranslateMsgs);
+                return StatusCode(StatusCodes.Status417ExpectationFailed, "An Error has occurred");
+            }
         }
 
         [HttpPut]
@@ -145,7 +180,9 @@ namespace OCTOBER.Server
             {
                 await _context.Database.BeginTransactionAsync();
 
-                var itm = await _context.Students.Where(x => x.StudentId == _StudentDTO.StudentId).FirstOrDefaultAsync();
+                var itm = await _context.Students.Where(
+                    x => x.StudentId == _StudentDTO.StudentId
+                ).FirstOrDefaultAsync();
 
                 itm.Salutation = _StudentDTO.Salutation;
                 itm.FirstName = _StudentDTO.FirstName;

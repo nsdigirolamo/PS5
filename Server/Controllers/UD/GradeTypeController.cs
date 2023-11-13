@@ -118,9 +118,39 @@ namespace OCTOBER.Server.Controllers.UD
             return View();
         }
 
-        public Task<IActionResult> Post([FromBody] GradeTypeDTO _T)
+        [HttpPost]
+        [Route("Post")]
+        public async Task<IActionResult> Post([FromBody] GradeTypeDTO _GradeTypeDTO)
         {
-            throw new NotImplementedException();
+            try
+            {
+                await _context.Database.BeginTransactionAsync();
+
+                var itm = await _context.GradeTypes.Where(
+                    x => x.SchoolId == _GradeTypeDTO.SchoolId &&
+                    x.GradeTypeCode == _GradeTypeDTO.GradeTypeCode
+                ).FirstOrDefaultAsync();
+
+                if (itm == null)
+                {
+                    GradeType x = new GradeType
+                    {
+                        SchoolId = _GradeTypeDTO.SchoolId,
+                        GradeTypeCode = _GradeTypeDTO.GradeTypeCode,
+                        Description = _GradeTypeDTO.Description,
+                    };
+                    _context.GradeTypes.Add(x);
+                    await _context.SaveChangesAsync();
+                    await _context.Database.CommitTransactionAsync();
+                }
+                return Ok();
+            }
+            catch (Exception Dex)
+            {
+                await _context.Database.RollbackTransactionAsync();
+                //List<OraError> DBErrors = ErrorHandling.TryDecodeDbUpdateException(Dex, _OraTranslateMsgs);
+                return StatusCode(StatusCodes.Status417ExpectationFailed, "An Error has occurred");
+            }
         }
 
         [HttpPut]

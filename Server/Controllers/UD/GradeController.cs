@@ -127,9 +127,46 @@ namespace OCTOBER.Server.Controllers.UD
             return View();
         }
 
-        public Task<IActionResult> Post([FromBody] GradeDTO _T)
+        [HttpPost]
+        [Route("Post")]
+        public async Task<IActionResult> Post([FromBody] GradeDTO _GradeDTO)
         {
-            throw new NotImplementedException();
+            try
+            {
+                await _context.Database.BeginTransactionAsync();
+
+                var itm = await _context.Grades.Where(
+                    x => x.SchoolId == _GradeDTO.SchoolId &&
+                    x.StudentId == _GradeDTO.StudentId &&
+                    x.SectionId == _GradeDTO.SectionId &&
+                    x.GradeCodeOccurrence == _GradeDTO.GradeCodeOccurrence &&
+                    x.GradeTypeCode == _GradeDTO.GradeTypeCode
+                ).FirstOrDefaultAsync();
+
+                if (itm == null)
+                {
+                    Grade x = new Grade
+                    {
+                        SchoolId = _GradeDTO.SchoolId,
+                        StudentId = _GradeDTO.StudentId,
+                        SectionId = _GradeDTO.SectionId,
+                        GradeTypeCode = _GradeDTO.GradeTypeCode,
+                        GradeCodeOccurrence = _GradeDTO.GradeCodeOccurrence,
+                        NumericGrade = _GradeDTO.NumericGrade,
+                        Comments = _GradeDTO.Comments,
+                    };
+                    _context.Grades.Add(x);
+                    await _context.SaveChangesAsync();
+                    await _context.Database.CommitTransactionAsync();
+                }
+                return Ok();
+            }
+            catch (Exception Dex)
+            {
+                await _context.Database.RollbackTransactionAsync();
+                //List<OraError> DBErrors = ErrorHandling.TryDecodeDbUpdateException(Dex, _OraTranslateMsgs);
+                return StatusCode(StatusCodes.Status417ExpectationFailed, "An Error has occurred");
+            }
         }
 
         [HttpPut]

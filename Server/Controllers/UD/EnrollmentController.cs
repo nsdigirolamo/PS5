@@ -122,9 +122,42 @@ namespace OCTOBER.Server.Controllers.UD
             return View();
         }
 
-        public Task<IActionResult> Post([FromBody] EnrollmentDTO _T)
+        [HttpPost]
+        [Route("Post")]
+        public async Task<IActionResult> Post([FromBody] EnrollmentDTO _EnrollmentDTO)
         {
-            throw new NotImplementedException();
+            try
+            {
+                await _context.Database.BeginTransactionAsync();
+
+                var itm = await _context.Enrollments.Where(
+                    x => x.StudentId == _EnrollmentDTO.StudentId &&
+                    x.SectionId == _EnrollmentDTO.SectionId &&
+                    x.SchoolId == _EnrollmentDTO.SchoolId
+                ).FirstOrDefaultAsync();
+
+                if (itm == null)
+                {
+                    Enrollment x = new Enrollment
+                    {
+                        StudentId = _EnrollmentDTO.StudentId,
+                        SectionId = _EnrollmentDTO.SectionId,
+                        EnrollDate = _EnrollmentDTO.EnrollDate,
+                        FinalGrade = _EnrollmentDTO.FinalGrade,
+                        SchoolId = _EnrollmentDTO.SchoolId,
+                    };
+                    _context.Enrollments.Add(x);
+                    await _context.SaveChangesAsync();
+                    await _context.Database.CommitTransactionAsync();
+                }
+                return Ok();
+            }
+            catch (Exception Dex)
+            {
+                await _context.Database.RollbackTransactionAsync();
+                //List<OraError> DBErrors = ErrorHandling.TryDecodeDbUpdateException(Dex, _OraTranslateMsgs);
+                return StatusCode(StatusCodes.Status417ExpectationFailed, "An Error has occurred");
+            }
         }
 
         [HttpPut]
@@ -139,7 +172,8 @@ namespace OCTOBER.Server.Controllers.UD
                 var itm = await _context.Enrollments.Where(
                     x => x.StudentId == _EnrollmentDTO.StudentId &&
                     x.SectionId == _EnrollmentDTO.SectionId &&
-                    x.SchoolId == _EnrollmentDTO.SchoolId).FirstOrDefaultAsync();
+                    x.SchoolId == _EnrollmentDTO.SchoolId
+                ).FirstOrDefaultAsync();
 
                 itm.EnrollDate = _EnrollmentDTO.EnrollDate;
                 itm.FinalGrade = _EnrollmentDTO.FinalGrade;

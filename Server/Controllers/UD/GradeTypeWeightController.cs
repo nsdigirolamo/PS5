@@ -124,9 +124,43 @@ namespace OCTOBER.Server.Controllers.UD
             return View();
         }
 
-        public Task<IActionResult> Post([FromBody] GradeTypeWeightDTO _T)
+        [HttpPost]
+        [Route("Post")]
+        public async Task<IActionResult> Post([FromBody] GradeTypeWeightDTO _GradeTypeWeightDTO)
         {
-            throw new NotImplementedException();
+            try
+            {
+                await _context.Database.BeginTransactionAsync();
+
+                var itm = await _context.GradeTypeWeights.Where(
+                    x => x.SchoolId == _GradeTypeWeightDTO.SchoolId &&
+                    x.SectionId == _GradeTypeWeightDTO.SectionId &&
+                    x.GradeTypeCode == _GradeTypeWeightDTO.GradeTypeCode
+                ).FirstOrDefaultAsync();
+
+                if (itm == null)
+                {
+                    GradeTypeWeight x = new GradeTypeWeight
+                    {
+                        SchoolId = _GradeTypeWeightDTO.SchoolId,
+                        SectionId = _GradeTypeWeightDTO.SectionId,
+                        GradeTypeCode = _GradeTypeWeightDTO.GradeTypeCode,
+                        NumberPerSection = _GradeTypeWeightDTO.NumberPerSection,
+                        PercentOfFinalGrade = _GradeTypeWeightDTO.PercentOfFinalGrade,
+                        DropLowest = _GradeTypeWeightDTO.DropLowest,
+                    };
+                    _context.GradeTypeWeights.Add(x);
+                    await _context.SaveChangesAsync();
+                    await _context.Database.CommitTransactionAsync();
+                }
+                return Ok();
+            }
+            catch (Exception Dex)
+            {
+                await _context.Database.RollbackTransactionAsync();
+                //List<OraError> DBErrors = ErrorHandling.TryDecodeDbUpdateException(Dex, _OraTranslateMsgs);
+                return StatusCode(StatusCodes.Status417ExpectationFailed, "An Error has occurred");
+            }
         }
 
         [HttpPut]

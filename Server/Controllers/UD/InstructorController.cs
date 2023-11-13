@@ -128,9 +128,44 @@ namespace OCTOBER.Server.Controllers.UD
             return View();
         }
 
-        public Task<IActionResult> Post([FromBody] InstructorDTO _T)
+        [HttpPost]
+        [Route("Post")]
+        public async Task<IActionResult> Post([FromBody] InstructorDTO _InstructorDTO)
         {
-            throw new NotImplementedException();
+            try
+            {
+                await _context.Database.BeginTransactionAsync();
+
+                var itm = await _context.Instructors.Where(
+                    x => x.SchoolId == _InstructorDTO.SchoolId &&
+                    x.InstructorId == _InstructorDTO.InstructorId
+                ).FirstOrDefaultAsync();
+
+                if (itm == null)
+                {
+                    Instructor x = new Instructor
+                    {
+                        SchoolId = _InstructorDTO.SchoolId,
+                        InstructorId = _InstructorDTO.InstructorId,
+                        Salutation = _InstructorDTO.Salutation,
+                        FirstName = _InstructorDTO.FirstName,
+                        LastName = _InstructorDTO.LastName,
+                        StreetAddress = _InstructorDTO.StreetAddress,
+                        Zip = _InstructorDTO.Zip,
+                        Phone = _InstructorDTO.Phone,
+                    };
+                    _context.Instructors.Add(x);
+                    await _context.SaveChangesAsync();
+                    await _context.Database.CommitTransactionAsync();
+                }
+                return Ok();
+            }
+            catch (Exception Dex)
+            {
+                await _context.Database.RollbackTransactionAsync();
+                //List<OraError> DBErrors = ErrorHandling.TryDecodeDbUpdateException(Dex, _OraTranslateMsgs);
+                return StatusCode(StatusCodes.Status417ExpectationFailed, "An Error has occurred");
+            }
         }
 
         [HttpPut]

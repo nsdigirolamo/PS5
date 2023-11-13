@@ -122,9 +122,40 @@ namespace OCTOBER.Server.Controllers.UD
             return View();
         }
 
-        public Task<IActionResult> Post([FromBody] GradeConversionDTO _T)
+        [HttpPost]
+        [Route("Post")]
+        public async Task<IActionResult> Post([FromBody] GradeConversionDTO _GradeConversionDTO)
         {
-            throw new NotImplementedException();
+            try
+            {
+                await _context.Database.BeginTransactionAsync();
+
+                var itm = await _context.GradeConversions.Where(
+                    x => x.SchoolId == _GradeConversionDTO.SchoolId
+                ).FirstOrDefaultAsync();
+
+                if (itm == null)
+                {
+                    GradeConversion x = new GradeConversion
+                    {
+                        SchoolId = _GradeConversionDTO.SchoolId,
+                        LetterGrade = _GradeConversionDTO.LetterGrade,
+                        GradePoint = _GradeConversionDTO.GradePoint,
+                        MaxGrade = _GradeConversionDTO.MaxGrade,
+                        MinGrade = _GradeConversionDTO.MinGrade,
+                    };
+                    _context.GradeConversions.Add(x);
+                    await _context.SaveChangesAsync();
+                    await _context.Database.CommitTransactionAsync();
+                }
+                return Ok();
+            }
+            catch (Exception Dex)
+            {
+                await _context.Database.RollbackTransactionAsync();
+                //List<OraError> DBErrors = ErrorHandling.TryDecodeDbUpdateException(Dex, _OraTranslateMsgs);
+                return StatusCode(StatusCodes.Status417ExpectationFailed, "An Error has occurred");
+            }
         }
 
         [HttpPut]
@@ -136,7 +167,9 @@ namespace OCTOBER.Server.Controllers.UD
             {
                 await _context.Database.BeginTransactionAsync();
 
-                var itm = await _context.GradeConversions.Where(x => x.SchoolId == _GradeConversionDTO.SchoolId).FirstOrDefaultAsync();
+                var itm = await _context.GradeConversions.Where(
+                    x => x.SchoolId == _GradeConversionDTO.SchoolId
+                ).FirstOrDefaultAsync();
 
                 itm.LetterGrade = _GradeConversionDTO.LetterGrade;
                 itm.GradePoint = _GradeConversionDTO.GradePoint;
